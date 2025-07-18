@@ -1,3 +1,2 @@
-{
-  "OMDB_API_KEY": "92632c79"
-}
+OMDB_API_KEY = st.secrets["92632c79"]
+

@@ -18,7 +18,10 @@ logging.basicConfig(
 
 logging.info("🔁 Loading data...")
 try:
-    df = joblib.load('df_cleaned.pkl')
+    if not os.path.exists('cosine_sim.pkl'):
+    gdown.download("https://drive.google.com/uc?id=1MxQq8KuPrvEvkeDSjq3ZDXPBLtenmvYq", "cosine_sim.pkl", quiet=False)
+cosine_sim = joblib.load('cosine_sim.pkl')
+
     cosine_sim = joblib.load('cosine_sim.pkl')
     logging.info("✅ Data loaded successfully.")
 except Exception as e:

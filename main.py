@@ -1,3 +1,29 @@
+# ADD this at the top of your `app.py` or main Python file
+import os
+
+# Install gdown if not already installed
+try:
+    import gdown
+except ImportError:
+    os.system('pip install gdown')
+
+# Download the cosine_sim.pkl file from Google Drive
+file_id = "1MxQq8KuPrvEvkeDSjq3ZDXPBLtenmvYq"
+output_file = "cosine_sim.pkl"
+
+if not os.path.exists(output_file):
+    gdown.download(f"https://drive.google.com/uc?id={file_id}", output_file, quiet=False)
+
+# Load the file
+import pickle
+with open("cosine_sim.pkl", "rb") as f:
+    cosine_sim = pickle.load(f)
+
+
+
+
+
+
 import os
 import joblib
 import pandas as pd
@@ -34,7 +60,7 @@ if not os.path.exists("cosine_sim.pkl") or not os.path.exists("df_cleaned.pkl"):
     joblib.dump(cosine_sim, "cosine_sim.pkl")
 else:
     df = joblib.load("df_cleaned.pkl")
-    cosine_sim = joblib.load("cosine_sim.pkl")
+   # cosine_sim = joblib.load("cosine_sim.pkl")
 
 
 

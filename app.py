@@ -1,120 +1,31 @@
 import streamlit as st
-st.title("🎬 Movie Recommendation System")
-st.write("Welcome! Upload a movie name below to get recommendations.")
-
-
-
-
-
-
-# ADD this at the top of your `app.py` or main Python file
-import os
-
-# Install gdown if not already installed
-try:
-    import gdown
-except ImportError:
-    os.system('pip install gdown')
-
-# Download the cosine_sim.pkl file from Google Drive
-file_id = "1MxQq8KuPrvEvkeDSjq3ZDXPBLtenmvYq"
-output_file = "cosine_sim.pkl"
-
-if not os.path.exists(output_file):
-    gdown.download(f"https://drive.google.com/uc?id={file_id}", output_file, quiet=False)
-
-# Load the file
-import pickle
-with open("cosine_sim.pkl", "rb") as f:
-    cosine_sim = pickle.load(f)
-
-
-
-
-
-
-import os
-import joblib
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
-nltk.download('punkt')
-nltk.download('stopwords')
-
-def preprocess_text(text):
-    text = re.sub(r"[^a-zA-Z\s]", "", str(text))
-    text = text.lower()
-    tokens = word_tokenize(text)
-    stop_words = set(stopwords.words('english'))
-    tokens = [word for word in tokens if word not in stop_words]
-    return " ".join(tokens)
-
-# Automatically create the pickle files if they don't exist
-if not os.path.exists("cosine_sim.pkl") or not os.path.exists("df_cleaned.pkl"):
-    df = pd.read_csv("movies.csv")
-    df = df[["genres", "keywords", "overview", "title"]].dropna().reset_index(drop=True)
-    df["combined"] = df["genres"] + " " + df["keywords"] + " " + df["overview"]
-    df["cleaned_text"] = df["combined"].apply(preprocess_text)
-
-    tfidf = TfidfVectorizer(max_features=5000)
-    tfidf_matrix = tfidf.fit_transform(df["cleaned_text"])
-    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
-
-    joblib.dump(df, "df_cleaned.pkl")
-    joblib.dump(cosine_sim, "cosine_sim.pkl")
-else:
-    df = joblib.load("df_cleaned.pkl")
-   # cosine_sim = joblib.load("cosine_sim.pkl")
-
-
-
-# app.py
-import json
-import streamlit as st
-from recommend import df, recommend_movies
+from recommend import recommend_movies, df
 from omdb_utils import get_movie_details
 
+# Securely load OMDB API key
+OMDB_API_KEY = st.secrets["OMDB_API_KEY"]
 
-config = json.load(open("config.json"))
+st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
+st.title("🎬 Movie Recommendation System")
+st.markdown("Upload a movie name below to get top similar movies.")
 
-# OMDB api key
-OMDB_API_KEY = config["OMDB_API_KEY"]
-
-st.set_page_config(
-    page_title="Movie Recommender",
-    page_icon="🎬",
-    layout="centered"
-)
-
-st.title("🎬 Movie Recommender")
-
-# Using 'title' instead of 'song' now
 movie_list = sorted(df['title'].dropna().unique())
-selected_movie = st.selectbox("🎬 Select a movie:", movie_list)
+selected_movie = st.selectbox("Select a movie:", movie_list)
 
-if st.button("🚀 Recommend Similar Movies"):
-    with st.spinner("Finding similar movies..."):
+if st.button("Recommend"):
+    with st.spinner("Getting recommendations..."):
         recommendations = recommend_movies(selected_movie)
         if recommendations is None or recommendations.empty:
-            st.warning("Sorry, no recommendations found.")
+            st.error("No similar movies found.")
         else:
-            st.success("Top similar movies:")
             for _, row in recommendations.iterrows():
-                movie_title = row['title']
-                plot, poster = get_movie_details(movie_title, OMDB_API_KEY)
-
+                title = row['title']
+                plot, poster = get_movie_details(title, OMDB_API_KEY)
                 with st.container():
                     col1, col2 = st.columns([1, 3])
                     with col1:
-                        if poster != "N/A":
-                            st.image(poster, width=100)
-                        else:
-                            st.write("❌ No Poster Found")
+                        st.image(poster if poster != "N/A" else "https://via.placeholder.com/100", width=100)
                     with col2:
-                        st.markdown(f"### {movie_title}")
-                        st.markdown(f"*{plot}*" if plot != "N/A" else "_Plot not available_")
+                        st.subheader(title)
+                        st.markdown(f"*{plot}*")
+

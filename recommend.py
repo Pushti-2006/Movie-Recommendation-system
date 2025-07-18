@@ -1,12 +1,9 @@
 import os
 import gdown
-
-
-# recommend.py
 import joblib
+import pandas as pd
 import logging
 
-# Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(levelname)s - %(message)s',
@@ -16,18 +13,18 @@ logging.basicConfig(
     ]
 )
 
-logging.info("🔁 Loading data...")
+# Load movies.csv
+df = pd.read_csv("movies.csv")
+
+# Load cosine_sim.pkl
 try:
     if not os.path.exists('cosine_sim.pkl'):
         gdown.download("https://drive.google.com/uc?id=1MxQq8KuPrvEvkeDSjq3ZDXPBLtenmvYq", "cosine_sim.pkl", quiet=False)
-
-
     cosine_sim = joblib.load('cosine_sim.pkl')
-    logging.info("✅ Data loaded successfully.")
+    logging.info("✅ cosine_sim.pkl loaded.")
 except Exception as e:
-    logging.error("❌ Failed to load required files: %s", str(e))
+    logging.error("❌ Failed to load cosine_sim.pkl: %s", str(e))
     raise e
-
 
 def recommend_movies(movie_name, top_n=5):
     logging.info("🎬 Recommending movies for: '%s'", movie_name)
@@ -39,11 +36,8 @@ def recommend_movies(movie_name, top_n=5):
     sim_scores = list(enumerate(cosine_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n + 1]
     movie_indices = [i[0] for i in sim_scores]
-    logging.info("✅ Top %d recommendations ready.", top_n)
-    # Create DataFrame with clean serial numbers starting from 1
     result_df = df[['title']].iloc[movie_indices].reset_index(drop=True)
-    result_df.index = result_df.index + 1  # Start from 1 instead of 0
+    result_df.index = result_df.index + 1
     result_df.index.name = "S.No."
-
     return result_df
 

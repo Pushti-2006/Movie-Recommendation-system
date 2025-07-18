@@ -1,3 +1,12 @@
+import streamlit as st
+st.title("🎬 Movie Recommendation System")
+st.write("Welcome! Upload a movie name below to get recommendations.")
+
+
+
+
+
+
 # ADD this at the top of your `app.py` or main Python file
 import os
 
